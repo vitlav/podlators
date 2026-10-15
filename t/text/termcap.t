@@ -15,7 +15,7 @@ use warnings;
 
 use lib 't/lib';
 
-use Test::More tests => 19;
+use Test::More tests => 21;
 use Test::Podlators qw(test_snippet);
 
 # Load the module.
@@ -55,3 +55,11 @@ local $ENV{TERM} = 'fake-test-terminal';
 local $ENV{TERMCAP} = 'fake-test-terminal:md=\\E[1m:me=\\E[m';
 $parser = Pod::Text::Termcap->new();
 is($parser->format_regex(), "\\\e\\[1m|\\\e\\[m", 'Limited character regex');
+
+# Test that a trailing SI in the normal sequence (as in the Linux console's
+# sgr0) is removed, since it would otherwise be left in the output.
+local $ENV{TERM} = 'fake-test-linux';
+local $ENV{TERMCAP} = 'fake-test-linux:md=\\E[1m:me=\\E[m^O';
+$parser = Pod::Text::Termcap->new();
+is($parser->format_regex(), "\\\e\\[1m|\\\e\\[m", 'SI stripped from normal');
+unlike($parser->cmd_b({}, 'text'), qr{ \cO }xms, 'No SI in bold text');

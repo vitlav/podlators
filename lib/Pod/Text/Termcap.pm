@@ -46,6 +46,12 @@ sub new {
         $bold = $term->Tputs('md');
         $undl = $term->Tputs('us');
         $norm = $term->Tputs('me');
+
+        # Some terminals (such as the Linux console) end the sgr0 sequence
+        # with SI (shift-in, ^O) to also select the G0 character set.  That
+        # control character would be left in the output after every
+        # formatted run and makes file(1) classify the text as binary data.
+        $norm =~ s{ \cO \z }{}xms if defined $norm;
         if (defined $$term{_co}) {
             $width = $$term{_co};
             $width =~ s/^\#//;
